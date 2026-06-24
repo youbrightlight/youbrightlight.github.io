@@ -1,0 +1,66 @@
+:root{
+  --gray: #bfbfbf;
+  --blue-deep: #00007B;
+  --blue-light: #1085D2;
+  --background: #008081;
+}
+
+html{
+  font-size: 10px;
+}
+body{
+  width:100%; height:100%;
+  margin: 0;
+}
+.os{
+  width: 100%;
+  height: 100%;
+  background-color: var(--background);
+}
+.window{
+  background-color: var(--gray);
+  position: absolute;
+  width:80%;
+  height:80%;
+  border: solid #ffffff .5rem;
+  z-index: 1;
+}
+.window .resizer{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  --resizer-margin: -1rem;
+}
+.window .resizer>*{
+  position: absolute;
+}
+.window .resizer .top{ top:var(--resizer-margin); left:0; }
+.window .resizer .bottom{ bottom:var(--resizer-margin); left:0; }
+.window .resizer .left{ left:var(--resizer-margin); top:0; }
+.window .resizer .right{ right:var(--resizer-margin); top:0; }
+.window .resizer .top, .window .resizer .bottom{ width: 100%; height: 1rem; cursor: ns-resize; }
+.window .resizer .left, .window .resizer .right{ height: 100%; width: 1rem; cursor: ew-resize; }
+.window .bar{
+  box-sizing: border-box;
+  width: 100%;
+  height: 4rem;
+  background: linear-gradient(to right,var(--blue-deep),var(--blue-light));
+  display: flex;
+  padding: .5rem;
+  -user-select: none;
+}
+.window .bar .x{
+  height: 100%;
+  width: auto;
+  margin-left: auto;
+  cursor: pointer;
+}
+.window .content{
+  font-size: 2rem;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1rem;
+}
