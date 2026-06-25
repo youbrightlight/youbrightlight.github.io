@@ -32,7 +32,13 @@ html, body{
   left: 10%;
   top: 10%;
   box-sizing: border-box;
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
+.window.close{
+  opacity: 0;
+}
+
 .window .resizer{
   position: absolute;
   width: 100%;
