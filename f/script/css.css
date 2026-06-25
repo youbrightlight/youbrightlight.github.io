@@ -38,7 +38,6 @@ html, body{
 .window.close{
   opacity: 0;
 }
-
 .window .resizer{
   position: absolute;
   width: 100%;
@@ -89,4 +88,23 @@ html, body{
   box-sizing: border-box;
   width: 100%;
   padding: 1rem;
+}
+#workspace{
+  width: 90%;
+  position: absolute;
+  bottom: 0;
+  margin-left: auto; margin-right: auto;
+  display: flex;
+  justify-content: space-around;
+  padding-bottom: 1.5rem;
+}
+#workspace .click{
+  height: 5rem;
+  width: auto;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  transform-origin: bottom;
+}
+#workspace .click:hover{
+  transform: scale(1.2);
 }

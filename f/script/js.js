@@ -2,11 +2,6 @@ const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
 
 const osPadding = 1 * rem;
 
-const windowtag = document.createElement("div");
-windowtag.classList.add("windowtag");
-windowtag.innerHTML = `
-  <div class='content'></div>
-`
 const window_bar = document.createElement("div");
 window_bar.classList.add("bar","grab");
 window_bar.innerHTML = `
@@ -24,6 +19,15 @@ window_resizer.innerHTML = `
   <div class='sw grab'></div>
   <div class='se grab'></div>
 `
+const windowtag = document.createElement("div");
+windowtag.classList.add("window");
+windowtag.innerHTML = `
+  <div class='content'></div>
+`
+windowtag.prepend(window_bar.cloneNode(true));
+windowtag.appendChild(window_resizer.cloneNode(true));
+
+const windowList = windowtag.cloneNode(true);
 
 
 {
@@ -34,9 +38,13 @@ window_resizer.innerHTML = `
     const windowFirst = document.getElementsByClassName("window");
     for(const tag of windowFirst){
       if(!tag.getElementsByClassName("bar")[0]){
-        tag.insertBefore(window_bar,tag.firstChild); //.cloneNode(true)
+        tag.insertBefore(window_bar.cloneNode(true),tag.firstChild); //.cloneNode(true)
       }
-      tag.appendChild(window_resizer);
+      tag.appendChild(window_resizer.cloneNode(true));
+    }
+
+    // open window
+    {
     }
 
 
@@ -49,16 +57,22 @@ window_resizer.innerHTML = `
 
       let mode = [];
       // [0] 1 = click, 2 = drag
-      // [1] click( 4 = close )
+      // [1] click( 1 = open, 4 = close )
       // [1] drag( 1 = move, 2 = resize )
 
       let clickStartTag;
+      let openTarget;
+      let instance = new Set();
 
       let dragStartX, dragStartY, dragStartWidth, dragStartHeight, dragStartTop, dragStartLeft;
       let dragXPaddingW, dragYPaddingN, dragXPaddingE, dragYPaddingS;
       let dragResizeDirection;
       let dragDirectionN, dragDirectionS, dragDirectionW, dragDirectionE;
 
+      function reset(){
+        targetTag = null;
+        mode = [];
+      }
       function tagRemove(tag){
         const css = window.getComputedStyle(tag);
         if(css.animationDuration !== "0s" && css.transitionDuration !== "0s"){
@@ -70,15 +84,31 @@ window_resizer.innerHTML = `
           }, 3000);
         }
       } 
+      function zindexOrder(target,rest){
+        if(target){
+          for(const tag of rest){
+            tag.style.zIndex = (tag==target) ? 3 : 2;
+          }
+        }
+      }
 
       os.addEventListener("mousedown",(event)=>{
-        const classList = event.target.classList;
+        clickStartTag = event.target;
+        const classList = clickStartTag.classList;
+
         if(event.button === 0){
+          let parentWindow = clickStartTag.closest(".window");
+          const instanceWindow = os.getElementsByClassName("window");
+          zindexOrder(parentWindow, instanceWindow);
+
           if(classList.contains("click")){
             mode[0] = 1;
             if(classList.contains("x")){
               mode[1] = 4;
               targetTag = event.target.parentNode.parentNode;
+            }else if(classList.contains("open")){
+              mode[1] = 1;
+              openTarget = event.target.dataset.open;
             }
           }else if(classList.contains("grab")){
             mode[0] = 2;
@@ -91,11 +121,10 @@ window_resizer.innerHTML = `
               targetTag = event.target.parentNode;
             }
           }
-          if((mode[0]>0) && targetTag){
+          if(mode[0]>0){
             event.preventDefault();
             switch(mode[0]){
               case 1:{
-                clickStartTag = event.target;
                 clickStartTag.classList.add("pressed");
               }break;
               case 2:{
@@ -177,6 +206,11 @@ window_resizer.innerHTML = `
             clickStartTag.classList.remove("pressed");
             if(event.target == clickStartTag){
               switch(mode[1]){
+                case 1:{
+                  if(!instance.has("list")){
+                    os.appendChild(windowList);
+                  }
+                }break;
                 case 4:{
                   targetTag.classList.add("close");
                   tagRemove(targetTag);
@@ -185,12 +219,12 @@ window_resizer.innerHTML = `
             }
           }break;
         }
-        targetTag = null;
+        reset();
       });
       os.addEventListener("mouseleave",()=>{
         switch(mode[0]){
           case 1:{
-            targetTag = null;
+            reset();
           }break;
         }
       });
