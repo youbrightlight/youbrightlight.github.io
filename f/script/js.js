@@ -27,11 +27,13 @@ windowtag.innerHTML = `
 windowtag.prepend(window_bar.cloneNode(true));
 windowtag.appendChild(window_resizer.cloneNode(true));
 
-
+const tag_workspaceIcon = document.createElement("img");
+tag_workspaceIcon.classList.add("click");
 
 {
   function afterLoad(){
     const os = document.getElementById("os");
+    const workspace = document.getElementById("workspace");
 
     const windowList = windowtag.cloneNode(true);
     windowList.id = "list";
@@ -40,13 +42,71 @@ windowtag.appendChild(window_resizer.cloneNode(true));
     windowList.style.top = "50%";
     windowList.style.left = os.clientWidth / 2 - (30*rem/2);
 
+    // functions
+    function workspace_iconAdd(tag){
+      const icon = workspace.children ;
+      const tId = tag.id ;
+      if(()=>{
+        for(const t of icon){
+          if(t.id == tId) return true ;
+        }
+        return false ;
+      }){
+        let originalLeft = [];
+        const fullcount = icon.length ;
+        for(let c = 0 ; c < fullcount ; c++){
+          originalLeft[c] = icon[c].offsetLeft ;
+        }
+        tag.style.opacity = "0";
+        tag.style.transform = "translateY(" + (5 * rem) + "px)";
+        workspace.appendChild(tag);
+        for(let c = 0 ; c < fullcount ; c++){
+          icon[c].style.transition = "none";
+          icon[c].style.transform = "translateX(" + (originalLeft[c] - icon[c].offsetLeft) + "px)" ;
+        }
+        requestAnimationFrame(()=>{
+          for(let c = 0 ; c < fullcount ; c++){
+            icon[c].addEventListener("transitionend", ()=>{
+              icon[c].style.transition = "";
+            },{ once: true }
+          );
+            icon[c].style.transition = "transform 0.5s cubic-bezier(0.5,0.5,0,1.3)" ;
+            icon[c].style.transform = "" ;
+          }
+            tag.style.transition = "transform 0.5s cubic-bezier(0,1,0.5,1), opacity 0.1s ease";
+            tag.style.transitionDelay = "0.2s";
+            tag.style.opacity = "";
+            tag.style.transform = "";
+            tag.addEventListener("transitionend",()=>{
+              tag.style.transition = "";
+            },{ once: true }
+          );
+        }); 
+      } 
+    }
 
-    const windowFirst = document.getElementsByClassName("window");
-    for(const tag of windowFirst){
-      if(!tag.getElementsByClassName("bar")[0]){
-        tag.insertBefore(window_bar.cloneNode(true),tag.firstChild); //.cloneNode(true)
+
+    // start, check windows
+    {
+      const windowFirst = os.getElementsByClassName("window");
+      let mainExist = false;
+      for(const tag of windowFirst){
+        if(!tag.getElementsByClassName("bar")[0]){
+          tag.insertBefore(window_bar.cloneNode(true),tag.firstChild); //.cloneNode(true)
+        }
+        tag.appendChild(window_resizer.cloneNode(true));
+        if(tag.id == "window_main") mainExist = true ;
       }
-      tag.appendChild(window_resizer.cloneNode(true));
+      if(!mainExist) windowFirst[0].id = "main";
+    }
+    const windowMain = document.getElementById("window_main");
+    
+    if(windowMain){
+      if(!document.getElementById("icon_workspace_main")){
+        const main = tag_workspaceIcon.cloneNode(true);
+        main.src = "/f/visual/icon_folder.svg";
+        workspace_iconAdd(main);
+      }
     }
 
     // open window
@@ -82,8 +142,8 @@ windowtag.appendChild(window_resizer.cloneNode(true));
       function tagRemove(tag){
         const css = window.getComputedStyle(tag);
         if(css.animationDuration !== "0s" && css.transitionDuration !== "0s"){
-          tag.addEventListener("animationed",()=> tag.remove(), { once: true });
-          tag.addEventListener("transitioned",()=> tag.remove(), { once: true });
+          tag.addEventListener("animationend",()=> tag.remove(), { once: true });
+          tag.addEventListener("transitionend",()=> tag.remove(), { once: true });
         }else{
           setTimeout(()=>{
             if(tag) tag.remove();
@@ -92,7 +152,7 @@ windowtag.appendChild(window_resizer.cloneNode(true));
       } 
       function zindexOrder(target){
         if(target){
-          const rest = document.getElementsByClassName("window");
+          const rest = os.getElementsByClassName("window");
           for(const tag of rest){
             tag.style.zIndex = (tag==target) ? 3 : 2;
           }

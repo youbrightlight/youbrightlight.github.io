@@ -20,6 +20,9 @@ html, body{
   height: 100%;
   background-color: var(--background);
 }
+.click{
+  cursor: pointer;
+}
 .window{
   background-color: var(--gray);
   position: absolute;
@@ -34,7 +37,6 @@ html, body{
   box-sizing: border-box;
   opacity: 1;
   transition: opacity 0.3s ease;
-  filter: drop-shadow(.3rem .3rem .3rem black);
 }
 .window.close{
   opacity: 0;
@@ -82,7 +84,6 @@ html, body{
   height: 100%;
   width: auto;
   margin-left: auto;
-  cursor: pointer;
 }
 .window .content{
   font-size: 2rem;
@@ -96,17 +97,20 @@ html, body{
   bottom: 0;
   margin-left: auto; margin-right: auto;
   display: flex;
-  justify-content: space-around;
+  justify-content: center;
+  gap: 2rem;
   padding-bottom: 1.5rem;
   z-index: 5;
 }
-#workspace .click{
+#workspace>*{
   height: 5rem;
   width: auto;
-  cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: transform 0.2s ease;
   transform-origin: bottom;
 }
-#workspace .click:hover{
-  transform: scale(1.2);
+#workspace>*:not(no_hover):hover{
+  transform: scale(1.1);
+}
+.window,#workspace>*{
+  filter: drop-shadow(.3rem .3rem .3rem rgba(0,0,0,.5));
 }
