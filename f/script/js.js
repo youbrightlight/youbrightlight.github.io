@@ -27,12 +27,18 @@ windowtag.innerHTML = `
 windowtag.prepend(window_bar.cloneNode(true));
 windowtag.appendChild(window_resizer.cloneNode(true));
 
-const windowList = windowtag.cloneNode(true);
 
 
 {
   function afterLoad(){
     const os = document.getElementById("os");
+
+    const windowList = windowtag.cloneNode(true);
+    windowList.id = "list";
+    windowList.style.width = (30 * rem) + "px";
+    windowList.style.height = (30 * rem) + "px";
+    windowList.style.top = "50%";
+    windowList.style.left = os.clientWidth / 2 - (30*rem/2);
 
 
     const windowFirst = document.getElementsByClassName("window");
@@ -84,8 +90,9 @@ const windowList = windowtag.cloneNode(true);
           }, 3000);
         }
       } 
-      function zindexOrder(target,rest){
+      function zindexOrder(target){
         if(target){
+          const rest = document.getElementsByClassName("window");
           for(const tag of rest){
             tag.style.zIndex = (tag==target) ? 3 : 2;
           }
@@ -98,8 +105,7 @@ const windowList = windowtag.cloneNode(true);
 
         if(event.button === 0){
           let parentWindow = clickStartTag.closest(".window");
-          const instanceWindow = os.getElementsByClassName("window");
-          zindexOrder(parentWindow, instanceWindow);
+          zindexOrder(parentWindow,);
 
           if(classList.contains("click")){
             mode[0] = 1;
@@ -209,6 +215,7 @@ const windowList = windowtag.cloneNode(true);
                 case 1:{
                   if(!instance.has("list")){
                     os.appendChild(windowList);
+                    zindexOrder(windowList);
                   }
                 }break;
                 case 4:{
