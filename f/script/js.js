@@ -97,15 +97,17 @@ icon_browser.classList.add("click");
               icon[c].style.transition = "";
             },{ once: true });
             icon[c].style.transition = "transform 0.5s cubic-bezier(0.5,0.5,0,1.3)" ;
-            icon[c].style.transform = "" ;
           }
-          tag.style.transition = "transform 0.5s cubic-bezier(0,1,0.5,1), opacity 0.1s ease";
-          tag.style.transitionDelay = "0.2s";
-          tag.style.opacity = "";
-          tag.style.transform = "";
           tag.addEventListener("transitionend",()=>{
             tag.style.transition = "";
           },{ once: true });
+          tag.style.transition = "transform 0.5s cubic-bezier(0,1,0.5,1), opacity 0.1s ease";
+          tag.style.transitionDelay = "0.2s";
+          requestAnimationFrame(()=>{
+            for(const i of icon) i.style.transform = "" ;
+            tag.style.opacity = "";
+            tag.style.transform = "";
+          });
         }); 
       } 
     }
@@ -127,7 +129,6 @@ icon_browser.classList.add("click");
           for(let c = 0; c < fullcount; c++){
             icon[c].style.transition = "none";
             icon[c].style.transform = "translateX(" + (originalLeft[c] - icon[c].offsetLeft) + "px)";
-            console.log(originalLeft - icon[c].offsetLeft);
           }
           requestAnimationFrame(()=>{
             for(let c = 0 ; c < fullcount ; c++){
@@ -135,14 +136,16 @@ icon_browser.classList.add("click");
                 icon[c].style.transition = "";
                 icon[c].style.transform = "";
               },{ once: true });
+
+              icon[c].style.transition = "transform 0.3s cubic-bezier(0.5,0.1,0.2,0)" ;
+
+              requestAnimationFrame(()=>{
+                for(let c = 0 ; c < fullcount ; c++){
+                  icon[c].style.transform = "none" ;
+                }
+              }); 
             }
           });
-          requestAnimationFrame(()=>{
-            for(let c = 0 ; c < fullcount ; c++){
-              icon[c].style.transition = "transform 0.3s cubic-bezier(0.5,0.1,0.2,0)" ;
-              icon[c].style.transform = "none" ;
-            }
-          }); 
         },{ once: true });
       });
     }
@@ -163,6 +166,20 @@ icon_browser.classList.add("click");
             os.appendChild(tagNew);
           }
         }
+        tagNew.style.opacity = "0" ;
+        tagNew.style.transition = "none" ;
+        requestAnimationFrame(()=>{
+          tagNew.addEventListener( "transitionend" , ()=>{
+            tagNew.style.transition = "" ;
+            tagNew.style.opactiy = "" ;
+          });
+
+          tagNew.style.transition = "opacity 0.5s ease" ;
+
+          requestAnimationFrame(()=>{
+            tagNew.style.opacity = "1" ;
+          });
+        });
         zindexOrder(tagNew);
       }else zindexOrder(exist);
     }
@@ -171,7 +188,7 @@ icon_browser.classList.add("click");
       tag.style.opacity = "0";
       if(tag.id != "list"){
         for(const t of workspace.children){
-          if(t.dataset.windowId == tag.id) workspace_iconRemove(t);
+          if(t.dataset.windowId == tag.id) workspace_iconRemove(t) ;
         }
       }
       tagRemove(tag);
