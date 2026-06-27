@@ -35,6 +35,32 @@ html, body{
   left: 10%;
   top: 10%;
   box-sizing: border-box;
+
+  --window_barHeight: 4rem;
+}
+.window .bar{
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--window_barHeight);
+  background: linear-gradient(to right,var(--blue-deep),var(--blue-light));
+  display: flex;
+  padding: .5rem;
+}
+.window>*:not(.content){ -user-select:none }
+.window .bar .x{
+  height: 100%;
+  width: auto;
+  margin-left: auto;
+}
+.window .area{
+  overflow-y: auto;
+  height: calc(100% - var(--window_barHeight));
+}
+.window .content{
+  font-size: 2rem;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1.5rem;
 }
 .window .resizer{
   position: absolute;
@@ -66,26 +92,6 @@ html, body{
 }
 .window .resizer .nw, .window .resizer .se{ cursor: nw-resize }
 .window .resizer .ne, .window .resizer .sw{ cursor: ne-resize }
-.window .bar{
-  box-sizing: border-box;
-  width: 100%;
-  height: 4rem;
-  background: linear-gradient(to right,var(--blue-deep),var(--blue-light));
-  display: flex;
-  padding: .5rem;
-}
-.window>*:not(.content){ -user-select:none }
-.window .bar .x{
-  height: 100%;
-  width: auto;
-  margin-left: auto;
-}
-.window .content{
-  font-size: 2rem;
-  box-sizing: border-box;
-  width: 100%;
-  padding: 1rem;
-}
 #workspace{
   width: 90%;
   position: absolute;

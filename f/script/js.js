@@ -22,7 +22,9 @@ window_resizer.innerHTML = `
 const windowtag = document.createElement("div");
 windowtag.classList.add("window");
 windowtag.innerHTML = `
-  <div class='content'></div>
+  <div class='area'>
+    <div class='content'></div>
+  </div>
 `
 windowtag.prepend(window_bar.cloneNode(true));
 windowtag.appendChild(window_resizer.cloneNode(true));
@@ -133,8 +135,10 @@ tag_workspaceIcon.classList.add("click");
     function window_close(tag){
       tag.style.transition = "opacity 0.5s ease";
       tag.style.opacity = "0";
-      for(const t of workspace.children){
-        if(t.dataset.windowId == tag.id) workspace_iconRemove(t);
+      if(!tag.id == "list"){
+        for(const t of workspace.children){
+          if(t.dataset.windowId == tag.id) workspace_iconRemove(t);
+        }
       }
       tagRemove(tag);
     }
@@ -160,14 +164,10 @@ tag_workspaceIcon.classList.add("click");
         const main = tag_workspaceIcon.cloneNode(true);
         main.src = "/f/visual/icon_folder.svg";
         main.dataset.windowId = "browser";
+        main.classList.add("click");
         workspace_iconAdd(main);
       }
     }
-
-    // open window
-    {
-    }
-
 
     // window transform 
     {
@@ -182,8 +182,6 @@ tag_workspaceIcon.classList.add("click");
       // [1] drag( 1 = move, 2 = resize )
 
       let clickStartTag;
-      let openTarget;
-      let instance = new Set();
 
       let dragStartX, dragStartY, dragStartWidth, dragStartHeight, dragStartTop, dragStartLeft;
       let dragXPaddingW, dragYPaddingN, dragXPaddingE, dragYPaddingS;
@@ -215,10 +213,10 @@ tag_workspaceIcon.classList.add("click");
             mode[0] = 1;
             if(classList.contains("x")){
               mode[1] = 4;
-              targetTag = event.target.parentNode.parentNode;
-            }else if(classList.contains("open")){
+              targetTag = event.target.closest(".window");
+            }else{
               mode[1] = 1;
-              openTarget = event.target.dataset.open;
+              targetTag = clickStartTag;
             }
           }else if(classList.contains("grab")){
             mode[0] = 2;
@@ -317,10 +315,27 @@ tag_workspaceIcon.classList.add("click");
             if(event.target == clickStartTag){
               switch(mode[1]){
                 case 1:{
-                  if(!instance.has("list")){
-                    os.appendChild(windowList);
-                    zindexOrder(windowList);
-                  }
+                  console.log(targetTag);
+                    switch(targetTag.dataset.windowId){
+                      case "list":{
+                        let existing = document.getElementById("list")
+                        if(existing){
+                          zindexOrder(existing);
+                        }else{
+                          const opening = windowList.cloneNode(true);
+                          os.appendChild(opening);
+                          zindexOrder(opening);
+                        }
+                      }break;
+                      case "browser":{
+                        let existing = document.getElementById("browser");
+                        if(existing){
+                          zindexOrder(existing);
+                        }else{
+                          window_open("browser");
+                        }
+                      }
+                    }
                 }break;
                 case 4:{
                   window_close(targetTag);
