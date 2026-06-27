@@ -93,7 +93,7 @@ html, body{
 .window .resizer .nw, .window .resizer .se{ cursor: nw-resize }
 .window .resizer .ne, .window .resizer .sw{ cursor: ne-resize }
 #workspace{
-  width: 90%;
+  width: 100%;
   position: absolute;
   bottom: 0;
   margin-left: auto; margin-right: auto;
