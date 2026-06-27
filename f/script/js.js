@@ -31,6 +31,10 @@ windowtag.appendChild(window_resizer.cloneNode(true));
 
 const tag_workspaceIcon = document.createElement("img");
 tag_workspaceIcon.classList.add("click");
+const icon_browser = tag_workspaceIcon.cloneNode(true);
+icon_browser.src = "/f/visual/icon_folder.svg";
+icon_browser.dataset.windowId = "browser";
+icon_browser.classList.add("click");
 
 {
   function afterLoad(){
@@ -45,6 +49,14 @@ tag_workspaceIcon.classList.add("click");
     windowList.style.left = os.clientWidth / 2 - (30*rem/2);
 
     // functions
+    function state(url){
+      const domainReg = "https?\:\/\/" + window.location.host.replace(/\./g,"\\.").replace(/:/g,"\\:");
+      switch(true){
+        case (new RegExp(domainReg + "(?:$|\\/.*)")).test(url): return "root"; break;
+        case (new RegExp(domainReg + "\\/list\\.html[^\\/]*")).test(url): return "list"; break;
+        default: return url;
+      }
+    }
     function tagRemove(tag){
       requestAnimationFrame(()=>{
         const css = window.getComputedStyle(tag);
@@ -141,6 +153,7 @@ tag_workspaceIcon.classList.add("click");
             tagNew.id = "browser";
             tagNew.getElementsByClassName("content")[0].id = "content_main";
             os.appendChild(tagNew);
+            workspace_iconAdd(icon_browser.cloneNode(true));
           } break;
           case "list":{
             tagNew = windowList.cloneNode(true);
@@ -167,7 +180,7 @@ tag_workspaceIcon.classList.add("click");
         browser = document.getElementById("browser");
       }
 
-      history.pushState({page: window.location.href} , "" , url);
+      history.pushState({page: state(window.location.href)} , "" , url);
       let inner, title;
       fetch(url).
       then(response => response.text()).
@@ -197,29 +210,36 @@ tag_workspaceIcon.classList.add("click");
 
 
     // start, check windows
+    let listInner;
     {
-      const windowFirst = os.getElementsByClassName("window");
       let urlHere = window.location.href;
-      history.replaceState({ page: urlHere },"", urlHere);
-      let mainExist = false;
-      for(const tag of windowFirst){
-        if(!tag.getElementsByClassName("bar")[0]){
-          tag.insertBefore(window_bar.cloneNode(true),tag.firstChild); //.cloneNode(true)
+      history.replaceState({ page: state(urlHere) },"", urlHere);
+
+      fetch("/list.html").then( response => response.text() ).then( html => {
+        const parser = new DOMParser;
+        const dom = parser.parseFromString(html, "text/html");
+        let contentTag = dom.getElementsByClassName("content")[0];
+        if(contentTag) listInner = contentTag.innerHTML;
+        else listInner = "<p>Error</p>";
+      });
+
+      const windowFirst = os.getElementsByClassName("window");
+      if(windowFirst.length > 0){
+        let mainExist = false;
+        for(const tag of windowFirst){
+          if(!tag.getElementsByClassName("bar")[0]){
+            tag.insertBefore(window_bar.cloneNode(true),tag.firstChild); //.cloneNode(true)
+          }
+          tag.appendChild(window_resizer.cloneNode(true));
+          if(tag.id == "browser") mainExist = true ;
         }
-        tag.appendChild(window_resizer.cloneNode(true));
-        if(tag.id == "browser") mainExist = true ;
-      }
-      if(!mainExist) windowFirst[0].id = "browser";
-    }
-    const windowMain = document.getElementById("browser");
-    
-    if(windowMain){
-      if(!document.getElementById("icon_workspace_main")){
-        const main = tag_workspaceIcon.cloneNode(true);
-        main.src = "/f/visual/icon_folder.svg";
-        main.dataset.windowId = "browser";
-        main.classList.add("click");
-        workspace_iconAdd(main);
+        if(!mainExist) windowFirst[0].id = "browser";
+
+        if(document.getElementById("browser")){
+          if(!document.getElementById("icon_workspace_main")){
+            workspace_iconAdd(icon_browser.cloneNode(true));
+          }
+        }
       }
     }
 
@@ -375,6 +395,10 @@ tag_workspaceIcon.classList.add("click");
                     const wid = targetTag.dataset.windowId;
                     if(wid){
                       switch(wid){
+                        case "list":{
+                          window_open("list");
+                          document.getElementById("list").getElementsByClassName("content")[0].innerHTML = listInner;
+                        }
                         default: window_open(wid);
                       }
                     }else{
@@ -403,7 +427,14 @@ tag_workspaceIcon.classList.add("click");
     
     // go back
     window.addEventListener("popstate", (event)=>{
-      if(event.state) browser_open(event.state.page);
+      const s = event.state.page;
+      if(s){
+        if(s == "root"){
+          for(const t of os.getElementsByClassName("window")) window_close(t);
+        }else if(s == "list"){
+          window_open("list");
+        }else browser_open(s);
+      }
       else location.reload();
     });
   }
