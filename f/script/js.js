@@ -117,7 +117,6 @@ tag_workspaceIcon.classList.add("click");
           for(let c = 0; c < fullcount; c++){
             icon[c].style.transition = "none";
             icon[c].style.transform = "translateX(" + (originalLeft[c] - icon[c].offsetLeft) + "px)";
-            console.log(icon[c].offsetLeft);
           }
           requestAnimationFrame(()=>{
             for(let c = 0 ; c < fullcount ; c++){
@@ -132,6 +131,25 @@ tag_workspaceIcon.classList.add("click");
         },{ once: true });
       });
     }
+    function window_open(id){
+      const exist = document.getElementById(id);
+      if(!exist){
+        let tagNew;
+        switch(id){
+          case "browser":{
+            tagNew = windowtag.cloneNode(true);
+            tagNew.id = "browser";
+            tagNew.getElementsByClassName("content")[0].id = "content_main";
+            os.appendChild(tagNew);
+          } break;
+          case "list":{
+            tagNew = windowList.cloneNode(true);
+            os.appendChild(tagNew);
+          }
+        }
+        zindexOrder(tagNew);
+      }else zindexOrder(exist);
+    }
     function window_close(tag){
       tag.style.transition = "opacity 0.5s ease";
       tag.style.opacity = "0";
@@ -142,11 +160,47 @@ tag_workspaceIcon.classList.add("click");
       }
       tagRemove(tag);
     }
+    function browser_open(url){
+      let browser = document.getElementById("browser");
+      if(!browser){
+        window_open("browser");
+        browser = document.getElementById("browser");
+      }
+
+      history.pushState({page: window.location.href} , "" , url);
+      let inner, title;
+      fetch(url).
+      then(response => response.text()).
+      then(html => {
+        const parser = new DOMParser();
+        const dom = parser.parseFromString(html, "text/html");
+        let content = dom.getElementById("content_main");
+        title = dom.title;
+        if(content) inner = content.innerHTML; 
+        else{
+          content = dom.getElementById("os").getElementsByClassName("content")[0];
+          if(content) inner = content.innerHTML;
+          else{
+            title = "404";
+            fetch("/404.html").then(response => response.text()).then(html =>{
+              const ppp = new DOMParser();
+              const ddd = parser.parseFromString(html, "text/html");
+              const nnn = ddd.getElementById("content_main");
+              inner = (nnn) ? nnn.innerHTML : "<p>404</p>";
+            });
+          }
+        }
+        document.title = title;
+        browser.getElementsByClassName("content")[0].innerHTML = inner;
+      });
+    }
 
 
     // start, check windows
     {
       const windowFirst = os.getElementsByClassName("window");
+      let urlHere = window.location.href;
+      history.replaceState({ page: urlHere },"", urlHere);
       let mainExist = false;
       for(const tag of windowFirst){
         if(!tag.getElementsByClassName("bar")[0]){
@@ -217,6 +271,9 @@ tag_workspaceIcon.classList.add("click");
             }else{
               mode[1] = 1;
               targetTag = clickStartTag;
+              if(targetTag.tagName === "A"){
+                targetTag.addEventListener("click",(e)=>{ e.preventDefault(); });
+              }
             }
           }else if(classList.contains("grab")){
             mode[0] = 2;
@@ -315,25 +372,14 @@ tag_workspaceIcon.classList.add("click");
             if(event.target == clickStartTag){
               switch(mode[1]){
                 case 1:{
-                  console.log(targetTag);
-                    switch(targetTag.dataset.windowId){
-                      case "list":{
-                        let existing = document.getElementById("list")
-                        if(existing){
-                          zindexOrder(existing);
-                        }else{
-                          const opening = windowList.cloneNode(true);
-                          os.appendChild(opening);
-                          zindexOrder(opening);
-                        }
-                      }break;
-                      case "browser":{
-                        let existing = document.getElementById("browser");
-                        if(existing){
-                          zindexOrder(existing);
-                        }else{
-                          window_open("browser");
-                        }
+                    const wid = targetTag.dataset.windowId;
+                    if(wid){
+                      switch(wid){
+                        default: window_open(wid);
+                      }
+                    }else{
+                      if(targetTag.tagName === "A"){
+                        browser_open(targetTag.href);
                       }
                     }
                 }break;
@@ -354,6 +400,12 @@ tag_workspaceIcon.classList.add("click");
         }
       });
     }
+    
+    // go back
+    window.addEventListener("popstate", (event)=>{
+      if(event.state) browser_open(event.state.page);
+      else location.reload();
+    });
   }
 
   if((document.readyState === "loading")) document.addEventListener("DOMContentLoaded", afterLoad);
