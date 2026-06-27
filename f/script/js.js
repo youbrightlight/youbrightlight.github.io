@@ -43,6 +43,19 @@ tag_workspaceIcon.classList.add("click");
     windowList.style.left = os.clientWidth / 2 - (30*rem/2);
 
     // functions
+    function tagRemove(tag){
+      requestAnimationFrame(()=>{
+        const css = window.getComputedStyle(tag);
+        if(css.animationDuration !== "0s" || css.transitionDuration !== "0s"){
+          tag.addEventListener("animationend",()=> tag.remove(), { once: true });
+          tag.addEventListener("transitionend",()=> tag.remove(), { once: true });
+        }else{
+          setTimeout(()=>{
+            if(tag) tag.remove();
+          }, 3000);
+        }
+      });
+    } 
     function workspace_iconAdd(tag){
       const icon = workspace.children ;
       const tId = tag.id ;
@@ -84,6 +97,47 @@ tag_workspaceIcon.classList.add("click");
         }); 
       } 
     }
+    function workspace_iconRemove(tag){
+      tag.style.transition = "transform 0.3s cubic-bezier(0.8,0.1,0.9,0.5), opacity 0.3s step-end";
+      tag.style.transform = "translateY(" + (5 * rem) + "px)";
+      tag.style.opacity = "0";
+      
+      const icon = Array.from(workspace.children).filter(child => child !== tag);
+      const fullcount = icon.length;
+      let originalLeft = [];
+      for(let c = 0 ; c < fullcount ; c++){
+        originalLeft[c] = icon[c].offsetLeft ;
+      }
+
+      requestAnimationFrame(()=>{
+        tag.addEventListener("transitionend",()=> {
+          tag.remove();
+          for(let c = 0; c < fullcount; c++){
+            icon[c].style.transition = "none";
+            icon[c].style.transform = "translateX(" + (originalLeft[c] - icon[c].offsetLeft) + "px)";
+            console.log(icon[c].offsetLeft);
+          }
+          requestAnimationFrame(()=>{
+            for(let c = 0 ; c < fullcount ; c++){
+              icon[c].addEventListener("transitionend", ()=>{
+                icon[c].style.transition = "";
+              },{ once: true }
+              );
+              icon[c].style.transition = "transform 0.5s cubic-bezier(0.5,0.1,0.2,0.2)" ;
+              icon[c].style.transform = "" ;
+            }
+          }); 
+        },{ once: true });
+      });
+    }
+    function window_close(tag){
+      tag.style.transition = "opacity 0.5s ease";
+      tag.style.opacity = "0";
+      for(const t of workspace.children){
+        if(t.dataset.windowId == tag.id) workspace_iconRemove(t);
+      }
+      tagRemove(tag);
+    }
 
 
     // start, check windows
@@ -95,16 +149,17 @@ tag_workspaceIcon.classList.add("click");
           tag.insertBefore(window_bar.cloneNode(true),tag.firstChild); //.cloneNode(true)
         }
         tag.appendChild(window_resizer.cloneNode(true));
-        if(tag.id == "window_main") mainExist = true ;
+        if(tag.id == "browser") mainExist = true ;
       }
-      if(!mainExist) windowFirst[0].id = "main";
+      if(!mainExist) windowFirst[0].id = "browser";
     }
-    const windowMain = document.getElementById("window_main");
+    const windowMain = document.getElementById("browser");
     
     if(windowMain){
       if(!document.getElementById("icon_workspace_main")){
         const main = tag_workspaceIcon.cloneNode(true);
         main.src = "/f/visual/icon_folder.svg";
+        main.dataset.windowId = "browser";
         workspace_iconAdd(main);
       }
     }
@@ -139,17 +194,6 @@ tag_workspaceIcon.classList.add("click");
         targetTag = null;
         mode = [];
       }
-      function tagRemove(tag){
-        const css = window.getComputedStyle(tag);
-        if(css.animationDuration !== "0s" && css.transitionDuration !== "0s"){
-          tag.addEventListener("animationend",()=> tag.remove(), { once: true });
-          tag.addEventListener("transitionend",()=> tag.remove(), { once: true });
-        }else{
-          setTimeout(()=>{
-            if(tag) tag.remove();
-          }, 3000);
-        }
-      } 
       function zindexOrder(target){
         if(target){
           const rest = os.getElementsByClassName("window");
@@ -279,8 +323,7 @@ tag_workspaceIcon.classList.add("click");
                   }
                 }break;
                 case 4:{
-                  targetTag.classList.add("close");
-                  tagRemove(targetTag);
+                  window_close(targetTag);
                 }
               }
             }
