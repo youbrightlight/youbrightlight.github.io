@@ -11,6 +11,7 @@
   const window_bar = document.createElement("div") ;
   window_bar.classList.add("bar","grab") ;
   window_bar.innerHTML = `
+    <h1></h1>
     <img class='x click close' src='/f/visual/button_x.svg' alt='close' role='button'>
   `
   const window_resizer = document.createElement("div") ;
@@ -123,12 +124,12 @@
         if(windowFirst.length > 0){
           let mainExist = false ;
           for(const tag of windowFirst){
-            let barTag = tag.getElementsByClassName("bar") ;
+            let barTag = tag.getElementsByClassName("bar")[0] ;
             if(barTag.length === 0){
               barTag = window_bar.cloneNode(true) ;
               tag.prepend(barTag) ;
             }
-            let titleTag = tag.getElementsByClassName("title") ;
+            let titleTag = tag.getElementsByTagName("H1") ;
             if(titleTag.length === 0){
               titleTag = document.createElement("h1") ;
               titleTag.textContent = document.title ;
@@ -153,17 +154,17 @@
 
           // tags
 
-          const windowtag = document.createElement("div") ;
-          windowtag.classList.add("window") ;
-          windowtag.innerHTML = `
+          const window_tag = document.createElement("div") ;
+          window_tag.classList.add("window") ;
+          window_tag.innerHTML = `
             <div class='area'>
               <div class='content'></div>
             </div>
           `
-          windowtag.prepend(window_bar.cloneNode(true)) ;
-          windowtag.appendChild(window_resizer.cloneNode(true)) ;
+          window_tag.prepend(window_bar.cloneNode(true)) ;
+          window_tag.appendChild(window_resizer.cloneNode(true)) ;
 
-          const windowList = windowtag.cloneNode(true) ;
+          const windowList = window_tag.cloneNode(true) ;
           windowList.id = "list" ;
           windowList.style.width = (30 * rem) + "px" ;
           windowList.style.height = (30 * rem) + "px" ;
@@ -172,13 +173,16 @@
 
           // functions
 
-          function state(url){
+          function url_state(url){
             const domainReg = "https?\:\/\/" + window.location.host.replace(/\./g,"\\.").replace(/:/g,"\\:") ;
             switch(true){
               case (new RegExp(domainReg + "(?:$|\\/.*)")).test(url): return "root" ; break;
               case (new RegExp(domainReg + "\\/list\\.html[^\\/]*")).test(url): return "list" ; break;
               default: return url ;
             }
+          }
+          function url_move(url){
+            history.pushState({page: url_state(window.location.href)} , "" , url) ;
           }
           function tagRemove(tag){
             requestAnimationFrame(()=>{
@@ -199,7 +203,7 @@
               let tagNew ;
               switch(id){
                 case "browser":{
-                  tagNew = windowtag.cloneNode(true) ;
+                  tagNew = window_tag.cloneNode(true) ;
                   tagNew.id = "browser" ;
                   tagNew.getElementsByClassName("content")[0].id = "content_main" ;
                   os.appendChild(tagNew) ;
@@ -235,6 +239,7 @@
                 if(t.dataset.windowId == tag.id) workspace_iconRemove(t) ;
               }
             }
+            if(tag.id === "browser") url_move("/") ; 
             tagRemove(tag) ;
           }
           function browser_open(url){
@@ -244,7 +249,7 @@
               browser = document.getElementById("browser") ;
             }
 
-            history.pushState({page: state(window.location.href)} , "" , url) ;
+            url_move(url) ;
             let inner, title ;
             fetch(url).
             then(response => response.text()).
@@ -252,9 +257,11 @@
               const parser = new DOMParser() ;
               const dom = parser.parseFromString(html, "text/html") ;
               let content = dom.getElementById("content_main") ;
-              title = dom.title ;
-              if(content) inner = content.innerHTML ; 
-              else{
+              let titleContent = dom.getElementsByTagName("TITLE")[0].textContent ;
+              title = titleContent ? titleContent : null ;
+              if(content){
+                inner = content.innerHTML ;
+              }else{
                 content = dom.getElementById("os").getElementsByClassName("content")[0] ;
                 if(content) inner = content.innerHTML ;
                 else{
@@ -268,6 +275,7 @@
                 }
               }
               document.title = title ;
+              browser.getElementsByTagName("H1")[0].textContent = title ;
               browser.getElementsByClassName("content")[0].innerHTML = inner ;
             }) ;
           }
@@ -278,7 +286,7 @@
           let listInner ;
           {
             let urlHere = window.location.href ;
-            history.replaceState({ page: state(urlHere) },"", urlHere) ;
+            history.replaceState({ page: url_state(urlHere) },"", urlHere) ;
 
             fetch("/list.html").then( response => response.text() ).then( html => {
               const parser = new DOMParser ;
