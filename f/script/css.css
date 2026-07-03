@@ -25,18 +25,24 @@ html, body{
 }
 .window{
   background-color: var(--gray);
-  position: absolute;
-  width: 80%;
   min-width: 15rem;
-  height: 80%;
   min-height: 15rem;
   border: solid #ffffff .5rem;
   z-index: 1;
-  left: 10%;
-  top: 10%;
   box-sizing: border-box;
 
   --window_barHeight: 4rem;
+}
+[data-pointer="true"] .window{
+  position: absolute;
+  width: 80%;
+  height: 80%;
+  left: 10%;
+  top: 10%;
+}
+[data-pointer="false"] .window{
+  width: 100% ;
+  height: 100% ;
 }
 .window .bar{
   box-sizing: border-box;
@@ -47,6 +53,11 @@ html, body{
   padding: .5rem;
 }
 .window>*:not(.content){ -user-select:none }
+.window h1{
+  height: 100%;
+  color: white;
+  margin: 0 1rem;
+}
 .window .bar .x{
   height: 100%;
   width: auto;
@@ -112,6 +123,28 @@ html, body{
 #workspace>*:not(no_hover):hover{
   transform: scale(1.1);
 }
-.window,#workspace>*{
+[data-pointer="true"] .window,#workspace>*{
   filter: drop-shadow(.3rem .3rem .3rem rgba(0,0,0,.5));
+}
+.screen{
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 2rem;
+}
+.screen.blue{
+  background-color: blue;
+  font-family: san-serif;
+  color: white;
+}
+.screen.blue h2{
+  font-size: 15rem;
+  text-align: center;
+  margin: 5rem auto;
+}
+.screen.blue p{
+  margin-left: 20% ; margin-right: 20% ;
+  font-size: 3rem ;
+  line-height: 1.3 ;
 }

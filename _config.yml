@@ -5,3 +5,10 @@ future: true
 
 kramadown:
   auto_ids: false
+
+defaults:
+  -
+    scope:
+      type: "posts"
+    values:
+      permalink: "/post/:year/:month/:day/:title"
