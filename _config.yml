@@ -12,3 +12,8 @@ defaults:
       type: "posts"
     values:
       permalink: "/post/:year/:month/:day/:title"
+  -
+    scope:
+      path: "/direct"
+    values:
+      permalink: "/:title"

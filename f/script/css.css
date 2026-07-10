@@ -44,24 +44,38 @@ html, body{
   width: 100% ;
   height: 100% ;
 }
-.window .bar{
+.window.maximized{
+  width: 100% ;
+  height: 100% ;
+  top: 0 ;
+  left: 0 ;
+}
+.window>*:not(.content){ -user-select:none }
+.bar{
   box-sizing: border-box;
   width: 100%;
   height: var(--window_barHeight);
   background: linear-gradient(to right,var(--blue-deep),var(--blue-light));
   display: flex;
   padding: .5rem;
+  gap: .5rem;
 }
-.window>*:not(.content){ -user-select:none }
-.window h1{
+.bar>*{
   height: 100%;
+}
+.bar h1{
   color: white;
   margin: 0 1rem;
+  order: 1;
+  margin-right: auto;
 }
-.window .bar .x{
-  height: 100%;
+.bar .close{
   width: auto;
-  margin-left: auto;
+  order: 3;
+}
+.bar .maximize{
+  width: auto;
+  order: 2;
 }
 .window .area{
   overflow-y: auto;

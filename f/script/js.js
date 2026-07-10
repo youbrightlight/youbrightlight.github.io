@@ -8,24 +8,30 @@
     ? false : true 
   ;
 
-  const window_bar = document.createElement("div") ;
-  window_bar.classList.add("bar","grab") ;
-  window_bar.innerHTML = `
+  function domGet(html){
+    const parser = new DOMParser() ;
+    return dom = parser.parseFromString(html, "text/html") ;
+  }
+
+  // tag
+
+  const window_tag = document.createElement("div") ;
+  window_tag.classList.add("window") ;
+  window_tag.innerHTML = `
+    <div class='area'>
+      <div class='content'></div>
+    </div>
+  `
+
+  const window_tag_bar = document.createElement("div") ;
+  window_tag_bar.classList.add("bar","grab") ;
+  window_tag_bar.innerHTML = `
     <h1></h1>
-    <img class='x click close' src='/f/visual/button_x.svg' alt='close' role='button'>
+    <img class='click close' src='/f/visual/button_x.svg' alt='close' role='button'>
   `
-  const window_resizer = document.createElement("div") ;
-  window_resizer.classList.add("resizer") ;
-  window_resizer.innerHTML = `
-    <div class='n grab'></div>
-    <div class='s grab'></div>
-    <div class='w grab'></div>
-    <div class='e grab'></div>
-    <div class='nw grab'></div>
-    <div class='ne grab'></div>
-    <div class='sw grab'></div>
-    <div class='se grab'></div>
-  `
+
+  window_tag.prepend(window_tag_bar) ;
+
 
   {
     function afterLoad(){
@@ -33,15 +39,25 @@
       if(os){
         const workspace = document.getElementById("workspace") ;
 
-        function workspace_iconAdd(tag){
+        function workspace_iconAdd(id){
           const icon = workspace.children ;
-          const tId = tag.id ;
           if(()=>{
             for(const t of icon){
-              if(t.id == tId) return true ;
+              if(t.id == id) return true ;
             }
             return false ;
           }){
+            const iconTable = {
+              "browser" : "/f/visual/icon_explorer.svg" ,
+              "list" : "/f/visual/icon_folder.svg" ,
+              "media" : "/f/visual/icon_media.svg"
+            }
+
+            const tag = document.createElement("img") ;
+            tag.classList.add("click") ;
+            tag.dataset.windowId = id ;
+            tag.src = iconTable[id] ;
+
             let originalLeft = [] ;
             const fullcount = icon.length ;
             for(let c = 0 ; c < fullcount ; c++){
@@ -113,56 +129,10 @@
           }) ;
         }
 
-        const tag_workspaceIcon = document.createElement("img") ;
-        tag_workspaceIcon.classList.add("click") ;
-        const icon_browser = tag_workspaceIcon.cloneNode(true) ;
-        icon_browser.src = "/f/visual/icon_folder.svg" ;
-        icon_browser.dataset.windowId = "browser" ;
-        icon_browser.classList.add("click") ;
-
-        const windowFirst = os.getElementsByClassName("window") ;
-        if(windowFirst.length > 0){
-          let mainExist = false ;
-          for(const tag of windowFirst){
-            let barTag = tag.getElementsByClassName("bar")[0] ;
-            if(barTag.length === 0){
-              barTag = window_bar.cloneNode(true) ;
-              tag.prepend(barTag) ;
-            }
-            let titleTag = tag.getElementsByTagName("H1") ;
-            if(titleTag.length === 0){
-              titleTag = document.createElement("h1") ;
-              titleTag.textContent = document.title ;
-              barTag.prepend(titleTag) ;
-            }else if(titleTag.firstChild === null){
-              titleTag.textContent = document.title ;
-            }
-            tag.appendChild(window_resizer.cloneNode(true)) ;
-            if(tag.id == "browser") mainExist = true ;
-          }
-          if(!mainExist) windowFirst[0].id = "browser" ;
-
-          if(document.getElementById("browser")){
-            if(!document.getElementById("icon_workspace_main")){
-              workspace_iconAdd(icon_browser.cloneNode(true)) ;
-            }
-          }
-        }
-
         if(device_pointer){
           os.dataset.pointer = "true" ;
 
           // tags
-
-          const window_tag = document.createElement("div") ;
-          window_tag.classList.add("window") ;
-          window_tag.innerHTML = `
-            <div class='area'>
-              <div class='content'></div>
-            </div>
-          `
-          window_tag.prepend(window_bar.cloneNode(true)) ;
-          window_tag.appendChild(window_resizer.cloneNode(true)) ;
 
           const windowList = window_tag.cloneNode(true) ;
           windowList.id = "list" ;
@@ -197,39 +167,84 @@
               }
             }) ;
           } 
-          function window_open(id){
-            const exist = document.getElementById(id) ;
-            if(!exist){
-              let tagNew ;
+          function window_open( id , parameter ){
+            let tag = document.getElementById(id) ;
+            if(!tag){
               switch(id){
                 case "browser":{
-                  tagNew = window_tag.cloneNode(true) ;
-                  tagNew.id = "browser" ;
-                  tagNew.getElementsByClassName("content")[0].id = "content_main" ;
-                  os.appendChild(tagNew) ;
-                  workspace_iconAdd(icon_browser.cloneNode(true)) ;
+                  tag = window_tag.cloneNode(true) ;
+                  tag.id = "browser" ;
+                  tag.getElementsByClassName("content")[0].id = "content_main" ;
+                  os.appendChild(tag) ;
+                  workspace_iconAdd("browser") ;
                 } break ;
                 case "list":{
-                  tagNew = windowList.cloneNode(true) ;
-                  os.appendChild(tagNew) ;
-                }
+                  tag = windowList.cloneNode(true) ;
+                  os.appendChild(tag) ;
+                } break ;
+                case "media":{
+                  tag = window_tag.cloneNode(true) ;
+                  tag.id = "media" ;
+                  os.appendChild(tag) ;
+                  workspace_iconAdd("media") ;
+                } break ;
               }
-              tagNew.style.opacity = "0" ;
-              tagNew.style.transition = "none" ;
+              tag.style.opacity = "0" ;
+              tag.style.transition = "none" ;
               requestAnimationFrame(()=>{
-                tagNew.addEventListener( "transitionend" , ()=>{
-                  tagNew.style.transition = "" ;
-                  tagNew.style.opactiy = "" ;
+                tag.addEventListener( "transitionend" , ()=>{
+                  tag.style.transition = "" ;
+                  tag.style.opactiy = "" ;
                 }) ;
 
-                tagNew.style.transition = "opacity 0.5s ease" ;
+                tag.style.transition = "opacity 0.5s ease" ;
 
                 requestAnimationFrame(()=>{
-                  tagNew.style.opacity = "1" ;
+                  tag.style.opacity = "1" ;
                 }) ;
               }) ;
-              zindexOrder(tagNew) ;
-            }else zindexOrder(exist) ;
+              zindexOrder(tag) ;
+            }else zindexOrder(tag) ;
+            switch(id){
+              case "browser":{
+                  if(parameter){
+                  url_move(parameter) ;
+                  let inner, title ;
+                  fetch(parameter).
+                  then(response => response.text()).
+                  then(html => {
+                    const dom = domGet(html) ;
+                    let content = dom.getElementById("content_main") ;
+                    let titleContent = dom.getElementsByTagName("TITLE")[0].textContent ;
+                    title = titleContent ? titleContent : null ;
+                    if(content){
+                      inner = content.innerHTML ;
+                    }else{
+                      content = dom.getElementById("os").getElementsByClassName("content")[0] ;
+                      if(content) inner = content.innerHTML ;
+                      else{
+                        title = "404" ;
+                        fetch("/404.html").then(response => response.text()).then(html =>{
+                          const nnn = domGet(html).getElementById("content_main") ;
+                          inner = (nnn) ? nnn.innerHTML : "<p>404</p>" ;
+                        }) ;
+                      }
+                    }
+                    document.title = title ;
+                    tag.getElementsByTagName("H1")[0].textContent = title ;
+                    tag.getElementsByClassName("content")[0].innerHTML = inner ;
+                  }) ;
+                }
+              } break ;
+              case "list": {
+                let listUrl ;
+                if(!parameter) listUrl = "/list" ;
+                else listUrl = parameter.trim() ;
+                fetch(listUrl).then(response => response.text()).then(html =>{
+                  tag.getElementsByClassName("content")[0].innerHTML = domGet(html).getElementsByClassName("content")[0].innerHTML ;
+                });
+              } break ;
+            }
           }
           function window_close(tag){
             tag.style.transition = "opacity 0.5s ease" ;
@@ -242,44 +257,24 @@
             if(tag.id === "browser") url_move("/") ; 
             tagRemove(tag) ;
           }
-          function browser_open(url){
-            let browser = document.getElementById("browser") ;
-            if(!browser){
-              window_open("browser") ;
-              browser = document.getElementById("browser") ;
+          function window_maximize(tag){
+            const cl = tag.classList ;
+            if(!cl.contains("maximized")){
+              cl.add("maximized") ;
+              tag.style.width = "100%" ;
+              tag.style.height = "100%" ;
+              tag.style.top = 0 ;
+              tag.style.left = 0 ;
+              tag.getElementsByClassName("bar")[0].classList.remove("grab") ;
+            }else{
+              cl.remove("maximized") ;
+              tag.style.width = "" ;
+              tag. style.height = "";
+              tag.style.top = "";
+              tag.style.left = "";
+              tag.getElementsByClassName("bar")[0].classList.add("grab") ;
             }
-
-            url_move(url) ;
-            let inner, title ;
-            fetch(url).
-            then(response => response.text()).
-            then(html => {
-              const parser = new DOMParser() ;
-              const dom = parser.parseFromString(html, "text/html") ;
-              let content = dom.getElementById("content_main") ;
-              let titleContent = dom.getElementsByTagName("TITLE")[0].textContent ;
-              title = titleContent ? titleContent : null ;
-              if(content){
-                inner = content.innerHTML ;
-              }else{
-                content = dom.getElementById("os").getElementsByClassName("content")[0] ;
-                if(content) inner = content.innerHTML ;
-                else{
-                  title = "404" ;
-                  fetch("/404.html").then(response => response.text()).then(html =>{
-                    const ppp = new DOMParser() ;
-                    const ddd = parser.parseFromString(html, "text/html") ;
-                    const nnn = ddd.getElementById("content_main") ;
-                    inner = (nnn) ? nnn.innerHTML : "<p>404</p>" ;
-                  }) ;
-                }
-              }
-              document.title = title ;
-              browser.getElementsByTagName("H1")[0].textContent = title ;
-              browser.getElementsByClassName("content")[0].innerHTML = inner ;
-            }) ;
           }
-
 
           // start, check windows
 
@@ -298,6 +293,56 @@
 
           }
 
+          const window_tag_maximize = document.createElement("img") ;
+          window_tag_maximize.classList.add("click","maximize") ;
+          window_tag_maximize.src = "/f/visual/icon_maximize.svg" ;
+          window_tag_maximize.alt = "maximize" ;
+          window_tag_maximize.role = "button" ;
+          const window_tag_resizer = document.createElement("div") ;
+          window_tag_resizer.classList.add("resizer") ;
+          window_tag_resizer.innerHTML = `
+            <div class='n grab'></div>
+            <div class='s grab'></div>
+            <div class='w grab'></div>
+            <div class='e grab'></div>
+            <div class='nw grab'></div>
+            <div class='ne grab'></div>
+            <div class='sw grab'></div>
+            <div class='se grab'></div>
+          `
+          window_tag_bar.appendChild(window_tag_maximize) ;
+          window_tag.appendChild(window_tag_resizer) ;
+
+          const windowFirst = os.getElementsByClassName("window") ;
+          if(windowFirst.length > 0){
+            let mainExist = false ;
+            for(const tag of windowFirst){
+              let barTag = tag.getElementsByClassName("bar")[0] ;
+              if(barTag.length === 0){
+                barTag = window_tag_bar.cloneNode(true) ;
+                tag.prepend(barTag) ;
+              }
+              let titleTag = tag.getElementsByTagName("H1") ;
+              if(titleTag.length === 0){
+                titleTag = document.createElement("h1") ;
+                titleTag.textContent = document.title ;
+                barTag.prepend(titleTag) ;
+              }else if(titleTag.firstChild === null){
+                titleTag.textContent = document.title ;
+              }
+              barTag.appendChild(window_tag_maximize) ;
+              tag.appendChild(window_tag_resizer) ;
+              if(tag.id == "browser") mainExist = true ;
+            }
+            if(!mainExist) windowFirst[0].id = "browser" ;
+
+            if(document.getElementById("browser")){
+              if(!document.getElementById("icon_workspace_main")){
+                workspace_iconAdd("browser") ;
+              }
+            }
+          }
+
           // window transform 
           {
             const windowSizeMin = 15 * rem ;
@@ -307,7 +352,7 @@
 
             let mode = [] ;
             // [0] 1 = click, 2 = drag
-            // [1] click( 1 = open, 4 = close )
+            // [1] click( 1 = open, 4 = close, 5 = maximize )
             // [1] drag( 1 = move, 2 = resize )
 
             let clickStartTag ;
@@ -334,31 +379,35 @@
               clickStartTag = event.target ;
               const classList = clickStartTag.classList ;
 
+              const parentWindow = clickStartTag.closest(".window") ;
+              zindexOrder(parentWindow) ;
+
               if(event.button === 0){
-                let parentWindow = clickStartTag.closest(".window") ;
-                zindexOrder(parentWindow,) ;
 
                 if(classList.contains("click")){
                   mode[0] = 1 ;
                   if(classList.contains("close")){
                     mode[1] = 4 ;
-                    targetTag = event.target.closest(".window") ;
+                    targetTag = parentWindow ;
+                  }else if(classList.contains("maximize")){
+                    mode[1] = 5 ;
+                    targetTag = parentWindow ;
                   }else{
                     mode[1] = 1 ;
                     targetTag = clickStartTag ;
                     if(targetTag.tagName === "A"){
-                      targetTag.addEventListener("click",(e)=>{ e.preventDefault() ; });
+                      targetTag.addEventListener( "click" ,(e)=>{ e.preventDefault() ; },{ once: true });
                     }
                   }
                 }else if(classList.contains("grab")){
                   mode[0] = 2 ;
-                  if(event.target.parentNode.classList.contains("resizer")){
+                  if(clickStartTag.closest(".resizer")){
                     mode[1] = 2 ;
-                    targetTag = event.target.parentNode.parentNode ;
-                    dragResizeDirection = event.target.classList[0] ;
-                  }else if(event.target.classList.contains("bar")){
+                    targetTag = clickStartTag.closest(".window") ;
+                    dragResizeDirection = clickStartTag.classList[0] ;
+                  }else if(classList.contains("bar")){
                     mode[1] = 1 ;
-                    targetTag = event.target.parentNode ;
+                    targetTag = clickStartTag.parentNode ;
                   }
                 }
                 if(mode[0]>0){
@@ -447,24 +496,19 @@
                   if(event.target == clickStartTag){
                     switch(mode[1]){
                       case 1:{
-                          const wid = targetTag.dataset.windowId ;
-                          if(wid){
-                            switch(wid){
-                              case "list":{
-                                window_open("list") ;
-                                document.getElementById("list").getElementsByClassName("content")[0].innerHTML = listInner ;
-                              }
-                              default: window_open(wid) ;
-                            }
-                          }else{
-                            if(targetTag.tagName === "A"){
-                              browser_open(targetTag.href) ;
-                            }
-                          }
+                        let wid , wparameter = null ;
+                        const tagDatasetWindowId = targetTag.dataset.windowId ;
+                        if(tagDatasetWindowId) wid = tagDatasetWindowId ;
+                        else if(targetTag.tagName === "A") wid = "browser" ;
+                        if(targetTag.href) wparameter = targetTag.href ;
+                        window_open(wid,wparameter) ;
                       }break ;
                       case 4:{
                         window_close(targetTag) ;
-                      }
+                      } break ;
+                      case 5:{
+                        window_maximize(targetTag) ;
+                      } break ;
                     }
                   }
                 }break ;
@@ -488,7 +532,7 @@
                 for(const t of os.getElementsByClassName("window")) window_close(t) ;
               }else if(s == "list"){
                 window_open("list") ;
-              }else browser_open(s) ;
+              }else window_open("browser",s) ;
             }
             else location.reload() ;
           }) ;
@@ -496,16 +540,48 @@
         }else{ // touch
           os.dataset.pointer = "false" ;
 
+          // start
+
+          const windowFirst = os.getElementsByClassName("window") ;
+          if(windowFirst.length > 0){
+            let mainExist = false ;
+            for(const tag of windowFirst){
+              let barTag = tag.getElementsByClassName("bar")[0] ;
+              if(barTag.length === 0){
+                barTag = window_tag_bar.cloneNode(true) ;
+                tag.prepend(barTag) ;
+              }
+              let titleTag = tag.getElementsByTagName("H1") ;
+              if(titleTag.length === 0){
+                titleTag = document.createElement("h1") ;
+                titleTag.textContent = document.title ;
+                barTag.prepend(titleTag) ;
+              }else if(titleTag.firstChild === null){
+                titleTag.textContent = document.title ;
+              }
+              if(tag.id == "browser") mainExist = true ;
+            }
+            if(!mainExist) windowFirst[0].id = "browser" ;
+
+            if(document.getElementById("browser")){
+              if(!document.getElementById("icon_workspace_main")){
+                workspace_iconAdd("browser") ;
+              }
+            }
+          }
+
           let touchStart ;
           let mode = [] ;
           // [0] 1 = touch
-          // [1] 4 = close
+          // touch [1] 4 = close
+          // 1 3 = up
 
           os.addEventListener( "touchstart" , (event)=>{
             if(event.target.classList.contains("click")){
               mode[0] = 1 ;
               touchStartTag = event.target ;
-              if(event.target.classList.contains("close")) mode[1] = 4 ;
+              if(touchStartTag.classList.contains("close")) mode[1] = 4 ;
+              else if(touchStartTag.classList.contains("open")) mode[1] = 3 ;
             }
           }) ;
           os.addEventListener( "touchend" , (event)=>{
@@ -513,6 +589,14 @@
               case 1:{
                 if(event.target == touchStartTag){
                   switch(mode[1]){
+                    case 3:{
+                      const to = touchStartTag.dataset.windowId ;
+                      if(to){
+                        switch(to){
+                          case "list": window.location.href = "/list" ; break ;
+                        }
+                      }
+                    } break ;
                     case 4:{
                       window.location.href = "/" ;
                     } break ;
