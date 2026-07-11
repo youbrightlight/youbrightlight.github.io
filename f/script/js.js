@@ -134,12 +134,23 @@
 
           // tags
 
-          const windowList = window_tag.cloneNode(true) ;
-          windowList.id = "list" ;
-          windowList.style.width = (30 * rem) + "px" ;
-          windowList.style.height = (30 * rem) + "px" ;
-          windowList.style.top = "50%" ;
-          windowList.style.left = os.clientWidth / 2 - (30*rem/2) ;
+          const window_tag_maximize = document.createElement("img") ;
+          window_tag_maximize.classList.add("click","maximize") ;
+          window_tag_maximize.src = "/f/visual/icon_maximize.svg" ;
+          window_tag_maximize.alt = "maximize" ;
+          window_tag_maximize.role = "button" ;
+          const window_tag_resizer = document.createElement("div") ;
+          window_tag_resizer.classList.add("resizer") ;
+          window_tag_resizer.innerHTML = `
+            <div class='n grab'></div>
+            <div class='s grab'></div>
+            <div class='w grab'></div>
+            <div class='e grab'></div>
+            <div class='nw grab'></div>
+            <div class='ne grab'></div>
+            <div class='sw grab'></div>
+            <div class='se grab'></div>
+          `
 
           // functions
 
@@ -173,20 +184,34 @@
               switch(id){
                 case "browser":{
                   tag = window_tag.cloneNode(true) ;
+                  tag.getElementsByClassName("bar")[0].appendChild(window_tag_maximize.cloneNode(true));
+                  tag.appendChild(window_tag_resizer.cloneNode(true));
                   tag.id = "browser" ;
                   tag.getElementsByClassName("content")[0].id = "content_main" ;
                   os.appendChild(tag) ;
                   workspace_iconAdd("browser") ;
                 } break ;
                 case "list":{
-                  tag = windowList.cloneNode(true) ;
+                  tag = window_tag.cloneNode(true) ;
+                  tag.appendChild(window_tag_resizer.cloneNode(true));
+                  tag.id = "list" ;
+                  tag.style.width = (30 * rem) + "px" ;
+                  tag.style.height = (30 * rem) + "px" ;
+                  tag.style.top = "50%" ;
+                  tag.style.left = os.clientWidth / 2 - (30*rem/2) ;
                   os.appendChild(tag) ;
                 } break ;
                 case "media":{
-                  tag = window_tag.cloneNode(true) ;
-                  tag.id = "media" ;
-                  os.appendChild(tag) ;
-                  workspace_iconAdd("media") ;
+                  if(parameter){
+                    tag = window_tag.cloneNode(true) ;
+                    tag.appendChild(window_tag_resizer.cloneNode(true));
+                    tag.getElementsByClassName("bar")[0].appendChild(window_tag_maximize.cloneNode(true));
+                    tag.id = "media" ;
+                    tag.style.width = (30 * rem) + "px";
+                    tag.style.height = "auto"
+                    os.appendChild(tag) ;
+                    workspace_iconAdd("media") ;
+                  };
                 } break ;
               }
               tag.style.opacity = "0" ;
@@ -244,6 +269,21 @@
                   tag.getElementsByClassName("content")[0].innerHTML = domGet(html).getElementsByClassName("content")[0].innerHTML ;
                 });
               } break ;
+              case "media":{
+                if(parameter){
+                  if(parameter.trim()[0] === "<"){
+                    tag.getElementsByClassName("content")[0].innerHTML = parameter;
+                  }else{
+                    fetch(parameter).then(response=>response.text()).then(html=>{
+                      const dom = domGet(html);
+                      contentTag = dom.getElementsByClassName("content")[0];
+                      tag.getElementsByClassName("content")[0].innerHTML = contentTag.innerHTML;
+                      const ratio = contentTag.dataset.ratio;
+                      if(ratio) tag.style.aspectRatio = ratio;
+                    });
+                  }
+                }
+              }
             }
           }
           function window_close(tag){
@@ -283,7 +323,7 @@
             let urlHere = window.location.href ;
             history.replaceState({ page: url_state(urlHere) },"", urlHere) ;
 
-            fetch("/list.html").then( response => response.text() ).then( html => {
+            fetch("/list").then( response => response.text() ).then( html => {
               const parser = new DOMParser ;
               const dom = parser.parseFromString(html, "text/html") ;
               let contentTag = dom.getElementsByClassName("content")[0] ;
@@ -292,26 +332,6 @@
             }) ;
 
           }
-
-          const window_tag_maximize = document.createElement("img") ;
-          window_tag_maximize.classList.add("click","maximize") ;
-          window_tag_maximize.src = "/f/visual/icon_maximize.svg" ;
-          window_tag_maximize.alt = "maximize" ;
-          window_tag_maximize.role = "button" ;
-          const window_tag_resizer = document.createElement("div") ;
-          window_tag_resizer.classList.add("resizer") ;
-          window_tag_resizer.innerHTML = `
-            <div class='n grab'></div>
-            <div class='s grab'></div>
-            <div class='w grab'></div>
-            <div class='e grab'></div>
-            <div class='nw grab'></div>
-            <div class='ne grab'></div>
-            <div class='sw grab'></div>
-            <div class='se grab'></div>
-          `
-          window_tag_bar.appendChild(window_tag_maximize) ;
-          window_tag.appendChild(window_tag_resizer) ;
 
           const windowFirst = os.getElementsByClassName("window") ;
           if(windowFirst.length > 0){
@@ -331,7 +351,7 @@
                 titleTag.textContent = document.title ;
               }
               barTag.appendChild(window_tag_maximize) ;
-              tag.appendChild(window_tag_resizer) ;
+              tag.appendChild(window_tag_resizer.cloneNode(true)) ;
               if(tag.id == "browser") mainExist = true ;
             }
             if(!mainExist) windowFirst[0].id = "browser" ;
@@ -361,8 +381,12 @@
             let dragXPaddingW, dragYPaddingN, dragXPaddingE, dragYPaddingS ;
             let dragResizeDirection ;
             let dragDirectionN, dragDirectionS, dragDirectionW, dragDirectionE ;
+            let aspectRatio = [];
+            let dragXMaxBi, dragXMaxBiAbs;
 
+            const freeze = (event)=>{ event.preventDefault(); }
             function reset(){
+              if(clickStartTag.tagName === "A") clickStartTag.removeEventListener("click",freeze,true);
               targetTag = null ;
               mode = [] ;
             }
@@ -383,7 +407,12 @@
               zindexOrder(parentWindow) ;
 
               if(event.button === 0){
-
+                if(clickStartTag.tagName === "A"){
+                  clickStartTag.addEventListener( "click" , freeze);
+                  mode[0] = 1;
+                  mode[1] = 1;
+                  targetTag = clickStartTag;
+                }
                 if(classList.contains("click")){
                   mode[0] = 1 ;
                   if(classList.contains("close")){
@@ -395,9 +424,6 @@
                   }else{
                     mode[1] = 1 ;
                     targetTag = clickStartTag ;
-                    if(targetTag.tagName === "A"){
-                      targetTag.addEventListener( "click" ,(e)=>{ e.preventDefault() ; },{ once: true });
-                    }
                   }
                 }else if(classList.contains("grab")){
                   mode[0] = 2 ;
@@ -450,6 +476,13 @@
                           const css = window.getComputedStyle(targetTag) ;
                           dragXMin = dragStartWidth - (css.minWidth?parseFloat(css.minWidth):windowSizeMin) ;
                           dragYMin = dragStartHeight - (css.minHeight?parseFloat(css.minHeight):windowSizeMin) ;
+
+                          const aspectRatio_computed = getComputedStyle(targetTag).aspectRatio;
+                          if(aspectRatio_computed !== "auto"){
+                            [aspectRatio[0],aspectRatio[1]] = aspectRatio_computed.split("/").map(Number);
+                            dragXMaxBi = (Math.abs(dragXPaddingW)<Math.abs(dragXPaddingE)) ? dragXPaddingW*2 : 0-(dragXPaddingE*2);
+                            dragXMaxBiAbs = Math.abs(dragXMaxBi);
+                          }
                         }break ;
                       }
                     }break ;
@@ -471,19 +504,46 @@
                   case 2:{
                     if(dragDirectionN){
                       let y = (dragYMove < 0) ? (Math.max(dragYMove, dragYPaddingN)) : (Math.min(dragYMove, dragYMin)) ;
-                      targetTag.style.height = dragStartHeight - y + "px" ;
-                      targetTag.style.top = dragStartTop + y + "px" ;
+                      if(!aspectRatio[1]){
+                        targetTag.style.height = dragStartHeight - y + "px" ;
+                        targetTag.style.top = dragStartTop + y + "px" ;
+                      }else{
+                        let x = y * aspectRatio[0] / aspectRatio[1];
+                        if(dragXMaxBiAbs > Math.abs(x)){
+                          targetTag.style.height = dragStartHeight - y + "px" ;
+                          targetTag.style.top = dragStartTop + y + "px" ;
+                          targetTag.style.width = dragStartWidth - x  + "px";
+                          targetTag.style.left = dragStartLeft + (x/2) + "px";
+                        }
+                      }
                     }else if(dragDirectionS){
                       let y = Math.min(dragYMove, dragYPaddingS) ;
-                      targetTag.style.height = dragStartHeight + y + "px" ;
+                      if(!aspectRatio[1]){
+                        targetTag.style.height = dragStartHeight + y + "px" ;
+                      }else{
+                        let x = y * aspectRatio[0] / aspectRatio[1];
+                        if(dragXMaxBiAbs > Math.abs(x)){
+                          targetTag.style.height = dragStartHeight + y + "px" ;
+                          targetTag.style.width = dragStartWidth + x + "px";
+                          targetTag.style.left = dragStartLeft - (x/2) + "px";
+                        }
+                      }
                     }
                     if(dragDirectionW){
                       let x = (dragXMove < 0) ? (Math.max(dragXMove, dragXPaddingW)) : (Math.min(dragXMove, dragXMin)) ;
                       targetTag.style.width = dragStartWidth - x + "px" ;
                       targetTag.style.left = dragStartLeft + x  + "px" ;
+                      if(aspectRatio[1]){
+                        let y = x * aspectRatio[1] / aspectRatio[0];
+                        targetTag.style.height = dragStartHeight - y  + "px";
+                      }
                     }else if(dragDirectionE){
                       let x = Math.min(dragXMove, dragXPaddingE) ;
                       targetTag.style.width = dragStartWidth + x + "px" ;
+                      if(aspectRatio[1]){
+                        let y = x * aspectRatio[1] / aspectRatio[0];
+                        targetTag.style.height = dragStartHeight + y + "px";
+                      }
                     }
                   }break ;
                 }

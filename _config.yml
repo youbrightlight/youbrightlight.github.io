@@ -14,6 +14,6 @@ defaults:
       permalink: "/post/:year/:month/:day/:title"
   -
     scope:
-      path: "/direct"
+      path: "direct"
     values:
-      permalink: "/:title"
+      permalink: "/:basename"
