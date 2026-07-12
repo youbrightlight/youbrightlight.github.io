@@ -20,6 +20,9 @@ html, body{
   height: 100%;
   background-color: var(--background);
 }
+#os.using iframe{
+  pointer-events: none;
+}
 .click{
   cursor: pointer;
 }
@@ -49,6 +52,10 @@ html, body{
   height: 100% ;
   top: 0 ;
   left: 0 ;
+}
+#media .content>*{
+  width: 100%;
+  height: 100%;
 }
 .window>*:not(.content){ -user-select:none }
 .bar{

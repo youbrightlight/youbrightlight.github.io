@@ -379,16 +379,20 @@
 
             let dragStartX, dragStartY, dragStartWidth, dragStartHeight, dragStartTop, dragStartLeft ;
             let dragXPaddingW, dragYPaddingN, dragXPaddingE, dragYPaddingS ;
+            let dragXMin, dragYMin;
             let dragResizeDirection ;
             let dragDirectionN, dragDirectionS, dragDirectionW, dragDirectionE ;
             let aspectRatio = [];
-            let dragXMaxBi, dragXMaxBiAbs;
+            let aspectRatioSum;
+            let dragXPaddingSum, dragYPaddingSum, dragXMinSum, dragYMinSum;
+            let dragXMaxBi, dragXMaxBiAbs, dragYMaxBi, dragYMaxBiAbs;
 
             const freeze = (event)=>{ event.preventDefault(); }
             function reset(){
               if(clickStartTag.tagName === "A") clickStartTag.removeEventListener("click",freeze,true);
               targetTag = null ;
               mode = [] ;
+              os.classList.remove("using");
             }
             function zindexOrder(target){
               if(target){
@@ -407,6 +411,7 @@
               zindexOrder(parentWindow) ;
 
               if(event.button === 0){
+                os.classList.add("using");
                 if(clickStartTag.tagName === "A"){
                   clickStartTag.addEventListener( "click" , freeze);
                   mode[0] = 1;
@@ -480,8 +485,27 @@
                           const aspectRatio_computed = getComputedStyle(targetTag).aspectRatio;
                           if(aspectRatio_computed !== "auto"){
                             [aspectRatio[0],aspectRatio[1]] = aspectRatio_computed.split("/").map(Number);
+                            aspectRatioSum = aspectRatio[0] + aspectRatio[1];
+
+                            if(dragDirectionN){
+                              dragYPaddingSum = dragYPaddingN * aspectRatioSum / aspectRatio[1];
+                              dragYMinSum = dragYMin * aspectRatioSum / aspectRatio[1];
+                            }else if(dragDirectionS){
+                              dragYPaddingSum = dragYPaddingS * aspectRatioSum / aspectRatio[1];
+                              dragYMinSum = dragYMin * aspectRatioSum / aspectRatio[1];
+                            }
+                            if(dragDirectionW){
+                              dragXPaddingSum = dragXPaddingW * aspectRatioSum / aspectRatio[0];
+                              dragXMinSum = dragXMin * aspectRatioSum / aspectRatio[0];
+                            }else if(dragDirectionE){
+                              dragXPaddingSum = dragXPaddingE * aspectRatioSum / aspectRatio[0];
+                              dragXMinSum = dragXMin * aspectRatioSum / aspectRatio[0];
+                            }
+
                             dragXMaxBi = (Math.abs(dragXPaddingW)<Math.abs(dragXPaddingE)) ? dragXPaddingW*2 : 0-(dragXPaddingE*2);
                             dragXMaxBiAbs = Math.abs(dragXMaxBi);
+                            dragYMaxBi = (Math.abs(dragYPaddingN)<Math.abs(dragYPaddingS)) ? dragYPaddingN*2 : 0-(dragYPaddingS*2);
+                            dragYMaxBiAbs = Math.abs(dragYMaxBi);
                           }
                         }break ;
                       }
@@ -502,45 +526,92 @@
                     targetTag.style.top = y + "px" ;
                   }break ;
                   case 2:{
-                    if(dragDirectionN){
-                      let y = (dragYMove < 0) ? (Math.max(dragYMove, dragYPaddingN)) : (Math.min(dragYMove, dragYMin)) ;
-                      if(!aspectRatio[1]){
+                    if(!aspectRatio[1]){
+                      if(dragDirectionN){
+                        let y = (dragYMove < 0) ? (Math.max(dragYMove, dragYPaddingN)) : (Math.min(dragYMove, dragYMin)) ;
                         targetTag.style.height = dragStartHeight - y + "px" ;
                         targetTag.style.top = dragStartTop + y + "px" ;
-                      }else{
+                      }else if(dragDirectionS){
+                        let y = Math.min(dragYMove, dragYPaddingS) ;
+                        targetTag.style.height = dragStartHeight + y + "px" ;
+                      }
+                      if(dragDirectionW){
+                        let x = (dragXMove < 0) ? (Math.max(dragXMove, dragXPaddingW)) : (Math.min(dragXMove, dragXMin)) ;
+                        targetTag.style.width = dragStartWidth - x + "px" ;
+                        targetTag.style.left = dragStartLeft + x  + "px" ;
+                      }else if(dragDirectionE){
+                        let x = Math.min(dragXMove, dragXPaddingE) ;
+                        targetTag.style.width = dragStartWidth + x + "px" ;
+                      }
+                    }else{
+                      if(dragDirectionN && dragDirectionW){
+                        let xySum = dragXMove + dragYMove;
+                        let x , y ;
+                        if(xySum<0) xySum = Math.max( xySum , dragYPaddingSum , dragXPaddingSum );
+                        else xySum = Math.min( xySum , dragXMinSum , dragYMinSum );
+                        x = xySum * aspectRatio[0] / aspectRatioSum;
+                        y = xySum * aspectRatio[1] / aspectRatioSum;
+
+                        targetTag.style.height = dragStartHeight - y + "px" ;
+                        targetTag.style.top = dragStartTop + y + "px" ;
+                        targetTag.style.width = dragStartWidth - x + "px" ;
+                        targetTag.style.left = dragStartLeft + x  + "px" ;
+                      }else if(dragDirectionN && dragDirectionE){
+                        let xySum = 0 - dragXMove + dragYMove;
+                        let x , y ;
+                        if(xySum<0) xySum = Math.max( xySum , dragYPaddingSum , 0-dragXPaddingSum );
+                        else xySum = Math.min( xySum , dragXMinSum , dragYMinSum );
+                        x = xySum * aspectRatio[0] / aspectRatioSum;
+                        y = xySum * aspectRatio[1] / aspectRatioSum;
+
+                        targetTag.style.height = dragStartHeight - y + "px" ;
+                        targetTag.style.top = dragStartTop + y + "px" ;
+                        targetTag.style.width = dragStartWidth - x + "px" ;
+                      }else if(dragDirectionS && dragDirectionW){
+                        let xySum = dragXMove - dragYMove;
+                        let x , y ;
+                        if(xySum<0) xySum = Math.max( xySum , 0-dragYPaddingSum , dragXPaddingSum );
+                        else xySum = Math.min( xySum , dragXMinSum , dragYMinSum );
+                        x = xySum * aspectRatio[0] / aspectRatioSum;
+                        y = xySum * aspectRatio[1] / aspectRatioSum;
+
+                        targetTag.style.height = dragStartHeight - y + "px" ;
+                        targetTag.style.width = dragStartWidth - x + "px" ;
+                        targetTag.style.left = dragStartLeft + x  + "px" ;
+                      }else if(dragDirectionS && dragDirectionE){
+                        let xySum = 0 - dragXMove - dragYMove;
+                        let x , y ;
+                        if(xySum<0) xySum = Math.max( xySum , 0-dragYPaddingSum , 0-dragXPaddingSum );
+                        else xySum = Math.min( xySum , dragXMinSum , dragYMinSum );
+                        x = xySum * aspectRatio[0] / aspectRatioSum;
+                        y = xySum * aspectRatio[1] / aspectRatioSum;
+
+                        targetTag.style.height = dragStartHeight - y + "px" ;
+                        targetTag.style.width = dragStartWidth - x + "px" ;
+                      }else if(dragDirectionN){
+                        let y = (dragYMove < 0) ? (Math.max(dragYMove, dragYPaddingN)) : (Math.min(dragYMove, dragYPaddingSum)) ;
                         let x = y * aspectRatio[0] / aspectRatio[1];
                         if(dragXMaxBiAbs > Math.abs(x)){
                           targetTag.style.height = dragStartHeight - y + "px" ;
                           targetTag.style.top = dragStartTop + y + "px" ;
                           targetTag.style.width = dragStartWidth - x  + "px";
-                          targetTag.style.left = dragStartLeft + (x/2) + "px";
+                          if(!dragDirectionE) targetTag.style.left = dragStartLeft + (x/2) + "px";
                         }
-                      }
-                    }else if(dragDirectionS){
-                      let y = Math.min(dragYMove, dragYPaddingS) ;
-                      if(!aspectRatio[1]){
-                        targetTag.style.height = dragStartHeight + y + "px" ;
-                      }else{
+                      }else if(dragDirectionS){
+                        let y = Math.min(dragYMove, dragYPaddingS) ;
                         let x = y * aspectRatio[0] / aspectRatio[1];
                         if(dragXMaxBiAbs > Math.abs(x)){
                           targetTag.style.height = dragStartHeight + y + "px" ;
                           targetTag.style.width = dragStartWidth + x + "px";
-                          targetTag.style.left = dragStartLeft - (x/2) + "px";
+                          if(!dragDirectionE) targetTag.style.left = dragStartLeft - (x/2) + "px";
                         }
-                      }
-                    }
-                    if(dragDirectionW){
-                      let x = (dragXMove < 0) ? (Math.max(dragXMove, dragXPaddingW)) : (Math.min(dragXMove, dragXMin)) ;
-                      targetTag.style.width = dragStartWidth - x + "px" ;
-                      targetTag.style.left = dragStartLeft + x  + "px" ;
-                      if(aspectRatio[1]){
+                      }else if(dragDirectionW){
+                        let x = (dragXMove < 0) ? (Math.max(dragXMove, dragXPaddingW)) : (Math.min(dragXMove, dragXPaddingSum)) ;
                         let y = x * aspectRatio[1] / aspectRatio[0];
                         targetTag.style.height = dragStartHeight - y  + "px";
-                      }
-                    }else if(dragDirectionE){
-                      let x = Math.min(dragXMove, dragXPaddingE) ;
-                      targetTag.style.width = dragStartWidth + x + "px" ;
-                      if(aspectRatio[1]){
+                      }else if(dragDirectionE){
+                        let x = Math.min(dragXMove, dragXPaddingE) ;
+                        targetTag.style.width = dragStartWidth + x + "px" ;
                         let y = x * aspectRatio[1] / aspectRatio[0];
                         targetTag.style.height = dragStartHeight + y + "px";
                       }
