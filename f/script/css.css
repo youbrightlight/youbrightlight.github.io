@@ -28,12 +28,9 @@ html, body{
 }
 .window{
   background-color: var(--gray);
-  min-width: 15rem;
-  min-height: 15rem;
   border: solid #ffffff .5rem;
   z-index: 1;
   box-sizing: border-box;
-
   --window_barHeight: 4rem;
 }
 [data-pointer="true"] .window{
@@ -85,14 +82,18 @@ html, body{
   order: 2;
 }
 .window .area{
-  overflow-y: auto;
   height: calc(100% - var(--window_barHeight));
+}
+.window:not(#media) .area{
+  overflow-y: auto;
 }
 .window .content{
   font-size: 2rem;
   box-sizing: border-box;
   width: 100%;
   padding: 1.5rem;
+  /*min-width: 30rem;
+  min-height: 30rem;*/
 }
 .window .resizer{
   position: absolute;
