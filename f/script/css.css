@@ -35,8 +35,8 @@ html, body{
 }
 [data-pointer="true"] .window{
   position: absolute;
-  width: 80%;
-  height: 80%;
+  width: 80% ; max-width: calc(100% - 2rem) ;
+  height: 80% ; max-height: calc(100% - 2rem) ;
   left: 10%;
   top: 10%;
 }
@@ -134,7 +134,7 @@ html, body{
   justify-content: center;
   gap: 2rem;
   padding-bottom: 1.5rem;
-  z-index: 5;
+  z-index: 100;
 }
 #workspace>*{
   height: 5rem;

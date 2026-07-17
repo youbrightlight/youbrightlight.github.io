@@ -132,6 +132,8 @@
         if(device_pointer){
           os.dataset.pointer = "true";
 
+          let pointer1Check = false;
+
           // tags
 
           const window_tag_maximize = document.createElement("img");
@@ -188,6 +190,10 @@
                   tag.appendChild(window_tag_resizer.cloneNode(true));
                   tag.id = "browser";
                   tag.getElementsByClassName("content")[0].id = "content_main";
+                  tag.style.width = (os.width * 0.8) + "px";
+                  tag.style.height = "auto";
+                  tag.style.top = (os.height * 0.2) + "px";
+                  tag.style.left = (os.width * 0.2) + "px";
                   os.appendChild(tag);
                   workspace_iconAdd("browser");
                 } break;
@@ -207,13 +213,16 @@
                     tag.appendChild(window_tag_resizer.cloneNode(true));
                     tag.getElementsByClassName("bar")[0].appendChild(window_tag_maximize.cloneNode(true));
                     tag.id = "media";
-                    tag.style.width = (30 * rem) + "px";
-                    tag.style.height = "auto"
+                    tag.style.width = (os.width * 0.8) + "px";
+                    tag.style.height = "auto";
+                    tag.style.top = (os.height * 0.2) + "px";
+                    tag.style.left = (os.width * 0.2) + "px";
                     os.appendChild(tag);
                     workspace_iconAdd("media");
                   };
                 } break;
               }
+
               tag.style.opacity = "0";
               tag.style.transition = "none";
               requestAnimationFrame(()=>{
@@ -400,10 +409,23 @@
               }
             }
             function zindexOrder(target){
+              let order = [];
               if(target){
-                const rest = os.getElementsByClassName("window");
-                for(const tag of rest){
-                  tag.style.zIndex = (tag==target) ? 3 : 2;
+                const rest = Array.from(os.getElementsByClassName("window")).filter(tag=>{ return tag !== target });
+                rest.sort((t1,t2)=>{
+                  const t1Z = window.getComputedStyle(t1).zIndex;
+                  const t2Z = window.getComputedStyle(t2).zIndex;
+                  return (
+                    (t1Z==='auto' || t1Z==='')?
+                      0 : parseInt(t1Z,10)
+                  ) - (
+                    (t2Z==='auto' || t2Z==='')?
+                      0 : parseInt(t2Z,10)
+                  );
+                });
+                rest.push(target);
+                for(let i = 0 ; i < rest.length ; i++){
+                  rest[i].style.zIndex = i + 10;
                 }
               }
             }
@@ -540,8 +562,8 @@
                             [aspectRatio[0],aspectRatio[1]] = aspectRatio_computed.split("/").map(Number);
                             aspectRatioSum = aspectRatio[0] + aspectRatio[1];
                             targetTag.style.height = (dragStartWidth - aspectRatioXFixed) * aspectRatio[1] / aspectRatio[0] + aspectRatioYFixed;
-                            dragXMinY = dragStartWidth - ((targetTagMinWidth>0)?targetTagMinWidth:windowSizeMin) * aspectRatio[1] / aspectRatio[0];
-                            dragYMinX = dragStartHeight - ((targetTagMinWidth>0)?targetTagMinHeight:windowSizeMin) * aspectRatio[0] / aspectRatio[1];
+                            dragXMinY = (dragStartHeight - ( (targetTagMinHeight>0)?targetTagMinHeight:windowSizeMin )) * aspectRatio[0] / aspectRatio[1];
+                            dragYMinX = (dragStartWidth - ( (targetTagMinWidth>0)?targetTagMinWidth:windowSizeMin )) * aspectRatio[1] / aspectRatio[0];
 
                             if(dragDirectionN){
                               dragYPaddingSum = dragYPaddingN * aspectRatioSum / aspectRatio[1];
@@ -664,27 +686,27 @@
                         targetTag.style.height = dragStartHeight - y + "px";
                         targetTag.style.width = dragStartWidth - x + "px";
                       }else if(dragDirectionN){
-                        let y = (dragYMove < 0) ? (Math.max(dragYMove, dragYPaddingN, dragBiMax)) : (Math.min(dragYMove, dragYMin, dragXMinY));
+                        let y = (dragYMove < 0) ? (Math.max(dragYMove, dragYPaddingN, dragBiMax)) : (Math.min(dragYMove, dragYMin, dragYMinX));
                         let x = y * aspectRatio[0] / aspectRatio[1];
                         targetTag.style.height = dragStartHeight - y + "px";
                         targetTag.style.top = dragStartTop + y + "px";
                         targetTag.style.width = dragStartWidth - x  + "px";
                         targetTag.style.left = dragStartLeft + (x/2) + "px";
                       }else if(dragDirectionS){
-                        let y = (dragYMove > 0) ? Math.min(dragYMove, dragYPaddingS, dragBiMax) : Math.max(dragYMove, dragYMin);
+                        let y = (dragYMove > 0) ? Math.min(dragYMove, dragYPaddingS, dragBiMax) : Math.max(dragYMove, dragYMin, 0-dragYMinX);
                         let x = y * aspectRatio[0] / aspectRatio[1];
                         targetTag.style.height = dragStartHeight + y + "px";
                         targetTag.style.width = dragStartWidth + x + "px";
                         targetTag.style.left = dragStartLeft - (x/2) + "px";
                       }else if(dragDirectionW){
-                        let x = (dragXMove < 0) ? (Math.max(dragXMove, dragXPaddingW, dragBiMax)) : (Math.min(dragXMove, dragXMin));
+                        let x = (dragXMove < 0) ? (Math.max(dragXMove, dragXPaddingW, dragBiMax)) : (Math.min(dragXMove, dragXMin, dragXMinY));
                         let y = x * aspectRatio[1] / aspectRatio[0];
                         targetTag.style.width = dragStartWidth - x + "px";
                         targetTag.style.left = dragStartLeft + x  + "px";
                         targetTag.style.height = dragStartHeight - y  + "px";
                         targetTag.style.top = dragStartTop + (y/2) + "px";
                       }else if(dragDirectionE){
-                        let x = (dragXMove > 0) ? Math.min(dragXMove, dragXPaddingE, dragBiMax) : Math.max(dragXMove, dragXMin, dragYMinX);
+                        let x = (dragXMove > 0) ? Math.min(dragXMove, dragXPaddingE, dragBiMax) : Math.max(dragXMove, dragXMin, 0-dragXMinY);
                         let y = x * aspectRatio[1] / aspectRatio[0];
                         targetTag.style.width = dragStartWidth + x + "px";
                         targetTag.style.height = dragStartHeight + y + "px";
@@ -726,9 +748,18 @@
                 case 1:{
                   reset();
                 }break;
+                case 2:{
+                  pointer1Check = true;
+                }break;
               }
             });
           }
+          os.addEventListener("mouseenter",(event)=>{
+            if(pointer1Check){
+              if(!(event.buttons & 1)) reset();
+            }
+            pointer1Check = false;
+          });
         
           // go back
           window.addEventListener("popstate", (event)=>{
